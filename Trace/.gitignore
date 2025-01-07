@@ -1,0 +1,7 @@
+# Project exclude paths
+*/.aws-sam/
+*/.idea/
+*/target/
+/.aws-sam/
+/.idea/
+/target/

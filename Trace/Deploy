@@ -1,0 +1,98 @@
+#!/bin/bash
+#
+# Brief description of your script
+# Copyright 2025 austin
+# Globals:
+STACK_NAME="DEV"
+AWS_INSTANCE_TYPE="t2.micro"
+MY_IP=$(curl -s http://checkip.amazonaws.com)
+MY_VPC=$(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text)
+TEMPLATE="template.yaml"
+REGION="us-east-2"
+ARCH="amd64"
+
+BOX_CAR_AMI=$(
+  curl -s "https://stable.release.flatcar-linux.net/$ARCH-usr/current/flatcar_production_ami_all.json" |
+    jq -r '.amis[] | select(.name == "'$REGION'").hvm'
+)
+
+UBUNTU_AMI=$(
+  curl -s "https://cloud-images.ubuntu.com/locator/ec2/releasesTable" |
+    jq -r '.aaData[] | select(.[0] == "'$REGION'" and .[2] == "24.04 LTS" and .[3] == "'$ARCH'") | .[6]' |
+    sed -E 's/.*(ami-[a-zA-Z0-9]+).*/\1/'
+)
+
+AWS_AMI="$BOX_CAR_AMI"
+
+build() {
+  sam validate --lint
+  sam build 
+}
+
+deploy() {
+  sam deploy \
+    --region $REGION \
+    --stack-name $STACK_NAME \
+    --no-confirm-changeset 
+    # --parameter-overrides \
+    # AmiId="$AWS_AMI" \
+    # InstanceType="$AWS_INSTANCE_TYPE" \
+    # MyIp="$MY_IP" \
+    # MyVpc="$MY_VPC" \
+    # --capabilities CAPABILITY_NAMED_IAM
+}
+
+getOutput() {
+  aws cloudformation describe-stacks \
+    --stack-name $STACK_NAME \
+    --query "Stacks[0].Outputs[]" \
+    --output json |
+    jq '{
+      nodes: (
+        [
+          (.[] | select(.OutputKey | test("host$")) | {
+            id: (.OutputKey | gsub("host$"; "")),
+            ip: .OutputValue,
+            platform: "AWS",
+            nodeType: "worker",
+            tcpPort: "8080",
+            sshPort: "22",
+            numCores: 4,
+            weight: 1
+          }),
+          (.[] | select(.OutputKey | test("controller$")) | {
+            id: (.OutputKey),
+            ip: .OutputValue,
+            platform: "AWS",
+            nodeType: "controller",
+            tcpPort: "8080",
+            sshPort: "22",
+            numCores: 4
+          })
+        ]
+      )
+    }' >node.json
+  cp node.json ../execution/src/main/resources/node.json
+  cat node.json
+}
+
+# getKeyPair() {
+#   local keyID
+#   keyID=$(aws ec2 describe-key-pairs \
+#     --query "KeyPairs[?KeyName=='$STACK_NAME-KeyPair'].KeyPairId" \
+#     --output text)
+#   aws ssm get-parameter \
+#     --name /ec2/keypair/"$keyID" \
+#     --with-decryption \
+#     --query Parameter.Value \
+#     --output text >"$STACK_NAME-Key.pem"
+# }
+
+function main() {
+  build
+  deploy
+  getOutput
+  #getKeyPair
+}
+
+main "$@"
