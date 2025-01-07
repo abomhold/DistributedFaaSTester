@@ -4,6 +4,8 @@
     <file url="file://$PROJECT_DIR$/CloudEventDeploy/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/CloudEventDeploy/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/CloudEventTrace/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/execution/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/execution/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
   </component>
 </project>

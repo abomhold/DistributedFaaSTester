@@ -1,0 +1,93 @@
+#!/bin/bash
+# Set parameters
+STACK_NAME="DEV"
+REGION="us-east-2"
+LOG_GROUP_NAME="/aws/${STACK_NAME}"
+RETENTION_DAYS=30
+CODE_URI="../Trace/target/lambda-trace.jar"
+HANDLER="lambda.Entry::handleRequest"
+RUNTIME="java21"
+MEMORY_SIZE=1792
+TIMEOUT=900
+EPHEMERAL_STORAGE_SIZE=512
+ARCHITECTURE="x86_64"
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ROLE_NAME="lambda-worker-role"
+
+# Create IAM role if it doesn't exist
+echo "Creating/Verifying IAM Role..."
+TRUST_POLICY='{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {
+      "Service": "lambda.amazonaws.com"
+    },
+    "Action": "sts:AssumeRole"
+  }]
+}'
+
+# Create role or get existing role ARN
+ROLE_ARN=$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text 2>/dev/null || \
+    aws iam create-role \
+        --role-name "$ROLE_NAME" \
+        --assume-role-policy-document "$TRUST_POLICY" \
+        --query 'Role.Arn' \
+        --output text)
+
+# Attach basic execution policy if needed
+aws iam attach-role-policy \
+    --role-name "$ROLE_NAME" \
+    --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" || true
+
+# Wait for role propagation
+echo "Waiting for role propagation..."
+sleep 15
+
+# Create Log Group
+echo "Creating Log Group: $LOG_GROUP_NAME"
+aws logs create-log-group --log-group-name "$LOG_GROUP_NAME" --region "$REGION" || true
+aws logs put-retention-policy --log-group-name "$LOG_GROUP_NAME" --retention-in-days $RETENTION_DAYS --region "$REGION"
+
+# Deploy each worker function
+for i in {0..0}; do
+    FUNCTION_NAME="worker$i"
+    echo "Deploying Lambda Function: $FUNCTION_NAME"
+
+    # Delete existing function if it exists
+    aws lambda delete-function --function-name "$FUNCTION_NAME" --region "$REGION" 2>/dev/null || true
+
+    # Create the Lambda function
+    FUNCTION_ARN=$(aws lambda create-function \
+        --function-name "$FUNCTION_NAME" \
+        --description "Lambda function for encoding" \
+        --runtime "$RUNTIME" \
+        --role "$ROLE_ARN" \
+        --handler "$HANDLER" \
+        --package-type "Zip" \
+        --zip-file "fileb://$CODE_URI" \
+        --timeout $TIMEOUT \
+        --memory-size $MEMORY_SIZE \
+        --ephemeral-storage "Size=$EPHEMERAL_STORAGE_SIZE" \
+        --architectures "$ARCHITECTURE" \
+        --region "$REGION" \
+        --query 'FunctionArn' \
+        --output text)
+
+    echo "Created Function ARN: $FUNCTION_ARN"
+
+    # Add Function URL
+    FUNCTION_URL=$(aws lambda create-function-url-config \
+        --function-name "$FUNCTION_NAME" \
+        --auth-type NONE \
+        --region "$REGION" \
+        --query 'FunctionUrl' \
+        --output text)
+
+    echo "Created Function URL: $FUNCTION_URL"
+
+    # Output function details
+    echo "$FUNCTION_NAME: ARN=$FUNCTION_ARN URL=$FUNCTION_URL"
+done
+
+echo "Deployment complete!"

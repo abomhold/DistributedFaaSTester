@@ -1,3 +1,0 @@
-[submodule "CloudEventTrace"]
-	path = CloudEventTrace
-	url = https://github.com/abomhold/CloudEventTrace.git

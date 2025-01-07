@@ -6,11 +6,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="execution" />
         <module name="CloudEventDeploy" />
         <module name="lambda" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="DistributedFaaSTester" target="11" />
       <module name="lambda-package" target="9" />
     </bytecodeTargetLevel>
   </component>

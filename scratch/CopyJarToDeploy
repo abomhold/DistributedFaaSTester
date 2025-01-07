@@ -1,0 +1,20 @@
+#!/bin/sh
+cp ../CloudEventTrace/target/lambda-trace.jar ../CloudEventDeploy/src/main/resources/lambda-trace.jar
+
+aws cloudformation describe-stacks \
+     --stack-name "dev" \
+     --query "Stacks[0].Outputs" \
+     --output json \
+     | jq --arg platform "AWS" \
+       --arg node_type "" \
+       --arg tcp_port "8080" \
+       --arg ssh_port "22" \
+       --argjson num_cores 4 \
+       --argjson weight 1 '(
+         {
+           "id": (.[] | select(.OutputKey == "FunctionArn").OutputValue),
+           "host": (.[] | select(.OutputKey == "FunctionUrl").OutputValue),
+         }
+         +
+         $ARGS.named
+       )'
