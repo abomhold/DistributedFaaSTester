@@ -1,106 +1,97 @@
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.ISO8601Utils;
+import entities.CloudWatch;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogGroupsRequest;
 import software.amazon.awssdk.services.cloudwatchlogs.model.DescribeLogStreamsRequest;
 import software.amazon.awssdk.services.cloudwatchlogs.model.GetLogEventsRequest;
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup;
+import software.amazon.awssdk.services.cloudwatchlogs.paginators.DescribeLogStreamsIterable;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
 
 public class collect {
 
     public static void main(String[] args) {
-//        String logStreamName = args[0];
         String logGroupName = "/trace";
         Region region = Region.US_EAST_2;
-        CloudWatchLogsClient cloudWatchLogsClient = CloudWatchLogsClient.builder().region(region).build();
-        var reqGroup = DescribeLogGroupsRequest.builder().logGroupNamePrefix(logGroupName).build();
 
+        var cloudWatchLogsClient = CloudWatchLogsClient
+                .builder()
+                .region(region)
+                .build();
 
-        var resGroup = cloudWatchLogsClient.describeLogGroups(reqGroup).logGroups();
+        var reqGroup = DescribeLogGroupsRequest
+                .builder()
+                .logGroupNamePrefix(logGroupName)
+                .build();
 
-        System.out.println("LOG GROUP INFO: ");
+        var resGroup = cloudWatchLogsClient
+                .describeLogGroups(reqGroup)
+                .logGroups();
 
-        // Print all log group information
+        System.out.println("\n############### LOG GROUP INFO ################\n");
         for (LogGroup logGroup : resGroup) {
-            for (var field : logGroup.sdkFields()) {
-                System.out.println(" " + field.unmarshallLocationName() + " = " + field.getValueOrDefault(logGroup));
+            System.out.println(CloudWatch.LogGroupInfo.fromLogGroup(logGroup));
+        }
+
+
+        var reqStreams = DescribeLogStreamsRequest.builder()
+                .logGroupName(logGroupName)
+                .build();
+        var resStreams = cloudWatchLogsClient.describeLogStreams(reqStreams);
+
+        var resStreamsItt = new DescribeLogStreamsIterable(cloudWatchLogsClient, reqStreams);
+
+
+        System.out.println("\n############### LOG STREAM INFO ################\n");
+
+        for (var logStream : resStreamsItt.logStreams()) {
+            System.out.println(CloudWatch.LogStreamInfo.fromLogStream(logStream));
+        }
+
+        if (!resStreams.logStreams().isEmpty()) {
+            var logStream = resStreams.logStreams().get(0);
+            var reqEvent = GetLogEventsRequest.builder()
+                    .logGroupName(logGroupName)
+                    .logStreamName(logStream.logStreamName())
+                    .startFromHead(true)
+                    .build();
+
+            var events = cloudWatchLogsClient.getLogEvents(reqEvent).events();
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            System.out.println("\n############### LOG EVENTS ################\n");
+
+            for (var log : events) {
+                System.out.println("Ingestion Time: " + log.ingestionTime());
+                System.out.println("Message: " + log.message());
+
+                try {
+                    CloudWatch.PlatformLog platformLog = objectMapper.readValue(log.message(), CloudWatch.PlatformLog.class);
+                    System.out.printf(" -> time: %s  |  type: %s%n", platformLog.time(), platformLog.type());
+
+                    var record = platformLog.record();
+                    if (record instanceof CloudWatch.PlatformLog.InitStartRecord initRec) {
+                        System.out.printf("    [initStart] Function: %s, Runtime: %s%n",
+                            initRec.functionName(), initRec.runtimeVersion());
+                    } else if (record instanceof CloudWatch.PlatformLog.StartRecord startRec) {
+                        System.out.printf("    [start] RequestId: %s, Version: %s%n",
+                            startRec.requestId(), startRec.version());
+                    } else if (record instanceof CloudWatch.PlatformLog.ReportRecord reportRec) {
+                        System.out.printf("    [report] Status: %s, Duration: %.2fms%n",
+                            reportRec.status(), reportRec.metrics().durationMs());
+                    }
+                } catch (JsonProcessingException e) {
+                    System.err.println("Failed to parse log message: " + e.getMessage());
+                }
+
+                System.out.println("-------------------------------------------\n");
             }
         }
 
-        var reqStreams = DescribeLogStreamsRequest.builder().logGroupName(logGroupName).build();
-
-        var resStreams = cloudWatchLogsClient.describeLogStreams(reqStreams);
-
-        //var streamsIterable = new DescribeLogStreamsIterable(cloudWatchLogsClient, reqStreams);
-
-        System.out.println("LOG STREAM INFO: ");
-        // Print all log stream information
-        var logStream = resStreams.logStreams().get(0);
-        for ( var field : logStream.sdkFields()) {
-            System.out.println(" " + field.unmarshallLocationName() + " = " + field.getValueOrDefault(logStream));
-        }
-
-        var reqEvent = GetLogEventsRequest.builder()
-                                          .logGroupName(logGroupName)
-                                          .logStreamName(logStream.logStreamName())
-                                          .startFromHead(true)
-                                          .build();
-
-        System.out.println(System.lineSeparator() + "############### LOG EVENTS ################" + System.lineSeparator());
-        for (var log : cloudWatchLogsClient.getLogEvents(reqEvent).events()) {
-            System.out.println("datetime=" + log.ingestionTime());
-            System.out.println(log.message());
-//            ObjectMapper objectMapper = new ObjectMapper();
-//            try {
-//                map = objectMapper.readValue(log.message(), new TypeReference<Map<String, String>>() {});
-//            } catch (JsonProcessingException e) {
-//                System.out.println(e.toString());
-//            }
-//
-//
-//            HashMap<String, String> data = new HashMap<>();
-//            try {
-//                var res = new ObjectMapper().readValue(log.message(), new TypeReference<HashMap<String, String>>() {});
-//                System.out.println(res.get("record"));
-//                data.putAll(res);
-//            } catch (JsonProcessingException e) {
-//                throw new RuntimeException(e);
-//
-//            }
-//            try {
-//                data.putAll(new ObjectMapper().readValue(data.get("record").toString(), new TypeReference<HashMap<String, Object>>() {}));
-//            } catch (JsonProcessingException e) {
-//                throw new RuntimeException(e);
-//            }
-
-//
-//            var record = data.get("record").toString().substring(1, data.get("record").toString().length() - 1);
-//
-//            for (var pair : record.split(", ")) {
-//                String[] keyValue = pair.split("=");
-//                if (keyValue.length == 2) {
-//                    data.put(keyValue[0], keyValue[1]);
-//                }
-//            }
-        }
-
-
         cloudWatchLogsClient.close();
     }
-
 }
-
-//        if (e.getKey().equals("record")) {
-//        try {
-//        data.putAll(new ObjectMapper().readValue(e.getValue()
-//                                                                                        .toString(), new TypeReference<Map<String, String>>() {
-//        }));
-//        } catch (JsonProcessingException ex) {
-//        throw new RuntimeException(ex);
-//                                          }
