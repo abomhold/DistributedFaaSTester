@@ -10,6 +10,8 @@
         <option value="$PROJECT_DIR$/CloudEventTrace/pom.xml" />
         <option value="$PROJECT_DIR$/CloudEventDeploy/pom.xml" />
         <option value="$PROJECT_DIR$/execution/pom.xml" />
+        <option value="$PROJECT_DIR$/trace/pom.xml" />
+        <option value="$PROJECT_DIR$/tester/pom.xml" />
       </list>
     </option>
   </component>

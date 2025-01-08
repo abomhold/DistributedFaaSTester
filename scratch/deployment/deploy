@@ -49,7 +49,7 @@ echo "Creating Log Group: $LOG_GROUP_NAME"
 aws logs create-log-group --log-group-name "$LOG_GROUP_NAME" --region "$REGION" || true
 aws logs put-retention-policy --log-group-name "$LOG_GROUP_NAME" --retention-in-days $RETENTION_DAYS --region "$REGION"
 
-# Deploy each worker function
+# deploy each worker function
 for i in {0..0}; do
     FUNCTION_NAME="worker$i"
     echo "Deploying Lambda Function: $FUNCTION_NAME"

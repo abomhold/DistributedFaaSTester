@@ -6,9 +6,10 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="execution" />
+        <module name="tester" />
         <module name="CloudEventDeploy" />
         <module name="lambda" />
+        <module name="trace" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

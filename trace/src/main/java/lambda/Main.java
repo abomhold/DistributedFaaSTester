@@ -5,10 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import saaf.Inspector;
 import saaf.Response;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,22 +27,19 @@ public class Main implements RequestHandler<HashMap<String, Object>, HashMap<Str
     }
 
     public HashMap<String, Object> handleRequest(HashMap<String, Object> request, Context context) {
+        if (request.get("body") != null) {
+            parseBody(request);
+        }
+//        Response response = new Response();
+//        response.setValue("Hello " + request.get("name") + "! This is from a response object!");
+        return new HashMap<>();
+    }
+}
 //        //Collect inital data
-        Inspector inspector = new Inspector();
+//        Inspector inspector = new Inspector();
 //        inspector.inspectContainer();
 //        inspector.inspectCPU();
 //        inspector.inspectLinux();
 //        inspector.inspectMemory(
-
-        if (request.get("body") != null) {
-            parseBody(request);
-        }
-
-
-        Response response = new Response();
-        response.setValue("Hello " + request.get("name") + "! This is from a response object!");
-        inspector.consumeResponse(response);
+//        inspector.consumeResponse(response);
 //        inspector.inspectAllDeltas();
-        return inspector.finish();
-    }
-}

@@ -3,6 +3,7 @@
 # Brief description of your script
 # Copyright 2025 austin
 # Globals:
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 STACK_NAME="DEV"
 AWS_INSTANCE_TYPE="t2.micro"
 MY_IP=$(curl -s http://checkip.amazonaws.com)
@@ -26,14 +27,14 @@ AWS_AMI="$BOX_CAR_AMI"
 
 build() {
   sam validate --lint
-  sam build 
+  sam build
 }
 
 deploy() {
   sam deploy \
     --region $REGION \
     --stack-name $STACK_NAME \
-    --no-confirm-changeset 
+    --no-confirm-changeset
     # --parameter-overrides \
     # AmiId="$AWS_AMI" \
     # InstanceType="$AWS_INSTANCE_TYPE" \
@@ -44,6 +45,7 @@ deploy() {
 
 getOutput() {
   aws cloudformation describe-stacks \
+    --region $REGION \
     --stack-name $STACK_NAME \
     --query "Stacks[0].Outputs[]" \
     --output json |
@@ -72,7 +74,7 @@ getOutput() {
         ]
       )
     }' >node.json
-  cp node.json ../execution/src/main/resources/node.json
+  cp node.json ../tester/src/main/resources/node.json
   cat node.json
 }
 
