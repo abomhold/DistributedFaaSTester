@@ -1,3 +1,5 @@
+package execute;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -5,11 +7,11 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-class JsonConfigs {
+interface JsonConfigs {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    ObjectMapper objectMapper = new ObjectMapper();
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         List<Node> nodes = loadNodes("node.json");
         System.out.println("Loaded Nodes:");
         nodes.forEach(System.out::println);
@@ -19,7 +21,7 @@ class JsonConfigs {
         payloads.forEach(System.out::println);
     }
 
-    public static List<Node> loadNodes(String resourceName) {
+    static List<Node> loadNodes(String resourceName) {
         try (InputStream inputStream = JsonConfigs.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (inputStream == null) {
                 throw new RuntimeException("Resource not found: " + resourceName);
@@ -33,7 +35,7 @@ class JsonConfigs {
     }
 
 
-    public static List<Map<String, Object>> loadPayloads(String resourceName) {
+    static List<Map<String, Object>> loadPayloads(String resourceName) {
         try (InputStream inputStream = JsonConfigs.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (inputStream == null) {
                 throw new RuntimeException("Resource not found: " + resourceName);
@@ -46,13 +48,13 @@ class JsonConfigs {
         }
     }
 
-    public record Node(String id,
-                       String ip,
-                       String platform,
-                       String nodeType,
-                       int tcpPort,
-                       int sshPort,
-                       int numCores,
-                       double weight) {
+    record Node(String id,
+                String ip,
+                String platform,
+                String nodeType,
+                int tcpPort,
+                int sshPort,
+                int numCores,
+                double weight) {
     }
 }

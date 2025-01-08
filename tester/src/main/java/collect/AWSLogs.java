@@ -1,16 +1,14 @@
-package entities;
+package collect;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup;
-import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream;
 
 import java.util.List;
 
-public interface CloudWatch {
+public interface AWSLogs {
 
     static void main(String[] args) throws Exception {
         String json = """
@@ -83,63 +81,6 @@ public interface CloudWatch {
             permits PlatformLog.InitStartRecord, PlatformLog.StartRecord, PlatformLog.ReportRecord {
     }
 
-    record LogGroupInfo(
-            String logGroupName,
-            long creationTime,
-            int retentionInDays,
-            int metricFilterCount,
-            String arn,
-            long storedBytes,
-            String kmsKeyId,
-            String dataProtectionStatus,
-            String[] inheritedProperties,
-            String logGroupClass,
-            String logGroupArn
-
-    ) {
-        public static LogGroupInfo fromLogGroup(LogGroup lg) {
-            return new LogGroupInfo(
-                    lg.logGroupName(),
-                    lg.creationTime(),
-                    lg.retentionInDays(),
-                    lg.metricFilterCount(),
-                    lg.arn(),
-                    lg.storedBytes(),
-                    lg.kmsKeyId(),
-                    lg.dataProtectionStatusAsString(),
-                    lg.inheritedPropertiesAsStrings().toArray(new String[0]),
-                    lg.logGroupClassAsString(),
-                    lg.logGroupArn()
-            );
-
-        }
-    }
-
-    record LogStreamInfo(
-            String logStreamName,
-            long creationTime,
-            long firstEventTimestamp,
-            long lastEventTimestamp,
-            long lastIngestionTime,
-            String uploadSequenceToken,
-            String arn
-    ) {
-        public static LogStreamInfo fromLogStream(LogStream ls) {
-            return new LogStreamInfo(
-                    ls.logStreamName(),
-                    ls.creationTime(),
-                    ls.firstEventTimestamp(),
-                    ls.lastEventTimestamp(),
-                    ls.lastIngestionTime(),
-                    ls.uploadSequenceToken(),
-                    ls.arn()
-            );
-        }
-    }
-
-    /**
-     * The top-level log record.
-     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     record PlatformLog(
             String time,
@@ -154,9 +95,6 @@ public interface CloudWatch {
             BaseRecord record
     ) {
 
-        /**
-         * Record subtype for "platform.initStart".
-         */
         @JsonTypeName("platform.initStart")
         @JsonIgnoreProperties(ignoreUnknown = true)
         public record InitStartRecord(
@@ -171,9 +109,6 @@ public interface CloudWatch {
         ) implements BaseRecord {
         }
 
-        /**
-         * Record subtype for "platform.start".
-         */
         @JsonTypeName("platform.start")
         @JsonIgnoreProperties(ignoreUnknown = true)
         public record StartRecord(
@@ -182,9 +117,6 @@ public interface CloudWatch {
         ) implements BaseRecord {
         }
 
-        /**
-         * Record subtype for "platform.report".
-         */
         @JsonTypeName("platform.report")
         @JsonIgnoreProperties(ignoreUnknown = true)
         public record ReportRecord(
@@ -193,9 +125,6 @@ public interface CloudWatch {
                 String status
         ) implements BaseRecord {
 
-            /**
-             * Nested metrics record, used by "platform.report".
-             */
             @JsonIgnoreProperties(ignoreUnknown = true)
             public record Metrics(
                     double durationMs,

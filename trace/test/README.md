@@ -1,6 +1,6 @@
 # FaaS Runner - Run FaaS Experiments
 
-FaaS Runner is a tool used to create, execute, and automate experiments on FaaS platforms using SAAF. FaaS Runner works by defining function and experiment JSON files. This project structure allows for experiments to be reused between many different functions.
+FaaS Runner is a tool used to create, Main, and automate experiments on FaaS platforms using SAAF. FaaS Runner works by defining function and experiment JSON files. This project structure allows for experiments to be reused between many different functions.
 
 ### Special Attributes and Attributes Calculated by FaaS Runner
 
@@ -35,7 +35,7 @@ By using FaaS Runner in conjunction with SAAF, many new metrics can be collected
 }
 ```
 
-An example function configuration can be found in [./functions/exampleFunction.json](functions/exampleFunction.json). Function files provide the core parameters needed to execute and modify a function. Here is a breakdown of the attributes:
+An example function configuration can be found in [./functions/exampleFunction.json](functions/exampleFunction.json). Function files provide the core parameters needed to Main and modify a function. Here is a breakdown of the attributes:
 
 * **function:** The name of your function.
 * **platform:** The cloud platform your function is deployed to. This is used to choose the correct CLI to invoke your functions with.
@@ -92,7 +92,7 @@ Experiment files determine how your function with be executed, what settings to 
 
 ### Test Settings
 
-* **callWithCLI:** Boolean - Whether to execute functions with a platform's CLI, or HTTP requests.
+* **callWithCLI:** Boolean - Whether to Main functions with a platform's CLI, or HTTP requests.
 * **callAsync:** Boolean - Current only supported with AWS Lambda, FaaS Runner will make Lambda calls asynchronously.
 * **memorySettings:** Integer List - A list of memory settings to use. If you do not want settings changed, use [].
 * **parentPayload:** Object - A single JSON object that all further payloads will be based off of. If a JSON payload is large with vary few changing attributes, the parent can be used to reduce the amount of data in the **payloads** attribute.
@@ -174,7 +174,7 @@ For example, overwritten options allows you to easily change the platform of a f
 ./faas_runner -f ./function.json -e ./experiment.json --platform IBM
 ```
 
-By utilizing default options, you can execute an function on AWS Lambda, using the CLI, without even entering a function json file.
+By utilizing default options, you can Main an function on AWS Lambda, using the CLI, without even entering a function json file.
 
 ```bash
 # Running a function called 'helloWorld' on AWS Lambda using the default function and experiment attributes.
@@ -227,7 +227,7 @@ Functions that run asynchronously can still be used with SAAF. Any data returned
 
 # Multi-Function Pipeline Experiments:
 
-FaaS Runner allows multi-function pipeline experiments by using all the same features of single-function experiments. With pipelines, each thread will sequentially execute each function of the pipeline and generate a report when all threads have finished their pipelines.
+FaaS Runner allows multi-function pipeline experiments by using all the same features of single-function experiments. With pipelines, each thread will sequentially Main each function of the pipeline and generate a report when all threads have finished their pipelines.
 
 To create a pipeline, simply supply multiple experiment and function files when calling FaaS Runner. Below shows a three function pipeline made up of 3 function files and 3 experiment files.
 
@@ -236,7 +236,7 @@ To create a pipeline, simply supply multiple experiment and function files when 
 ./faas_runner.py -f ./func1.json ./func2.json ./func3.json -e ./exp1.json ./exp2.json ./exp3.json
 ```
 
-By default, pipelines will use the first experiment file as the "master" experiment. This experiment file will be used to determine how many threads the pipeline uses, the number of runs, and how the output will be generated. The non-master experiment files will be used to determine the respective function's payloads. The function's and experiment's will act as pairs, in the example above func1.json will use exp1.json, func2.json will use exp2.json and so on. The pipeline will execute functions in the order defined here, this behavior can be modified to create much more complicated pipelines.
+By default, pipelines will use the first experiment file as the "master" experiment. This experiment file will be used to determine how many threads the pipeline uses, the number of runs, and how the output will be generated. The non-master experiment files will be used to determine the respective function's payloads. The function's and experiment's will act as pairs, in the example above func1.json will use exp1.json, func2.json will use exp2.json and so on. The pipeline will Main functions in the order defined here, this behavior can be modified to create much more complicated pipelines.
 
 ## Overwriting Attributes in Pipelines with Command Line Arguments:
 
