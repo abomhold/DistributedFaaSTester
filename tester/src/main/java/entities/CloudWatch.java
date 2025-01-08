@@ -97,19 +97,19 @@ public interface CloudWatch {
             String logGroupArn
 
     ) {
-        public static LogGroupInfo fromLogGroup(LogGroup logGroup) {
+        public static LogGroupInfo fromLogGroup(LogGroup lg) {
             return new LogGroupInfo(
-                    logGroup.logGroupName(),
-                    logGroup.creationTime(),
-                    logGroup.retentionInDays(),
-                    logGroup.metricFilterCount(),
-                    logGroup.arn(),
-                    logGroup.storedBytes(),
-                    logGroup.kmsKeyId(),
-                    logGroup.dataProtectionStatusAsString(),
-                    logGroup.inheritedPropertiesAsStrings().toArray(new String[0]),
-                    logGroup.logGroupClassAsString(),
-                    logGroup.logGroupArn()
+                    lg.logGroupName(),
+                    lg.creationTime(),
+                    lg.retentionInDays(),
+                    lg.metricFilterCount(),
+                    lg.arn(),
+                    lg.storedBytes(),
+                    lg.kmsKeyId(),
+                    lg.dataProtectionStatusAsString(),
+                    lg.inheritedPropertiesAsStrings().toArray(new String[0]),
+                    lg.logGroupClassAsString(),
+                    lg.logGroupArn()
             );
 
         }
@@ -124,15 +124,15 @@ public interface CloudWatch {
             String uploadSequenceToken,
             String arn
     ) {
-        public static LogStreamInfo fromLogStream(LogStream logStream) {
+        public static LogStreamInfo fromLogStream(LogStream ls) {
             return new LogStreamInfo(
-                    logStream.logStreamName(),
-                    logStream.creationTime(),
-                    logStream.firstEventTimestamp(),
-                    logStream.lastEventTimestamp(),
-                    logStream.lastIngestionTime(),
-                    logStream.uploadSequenceToken(),
-                    logStream.arn()
+                    ls.logStreamName(),
+                    ls.creationTime(),
+                    ls.firstEventTimestamp(),
+                    ls.lastEventTimestamp(),
+                    ls.lastIngestionTime(),
+                    ls.uploadSequenceToken(),
+                    ls.arn()
             );
         }
     }
