@@ -49,33 +49,64 @@ public interface AWSLogs {
                       },
                       "status": "success"
                     }
+                  },
+                  {
+                      "timestamp": "2025-01-08T21:21:30.201Z",
+                      "message": "{headers={x-amzn-tls-cipher-suite=TLS_AES_128_GCM_SHA256, content-length=16, x-amzn-tls-version=TLSv1.3, x-amzn-trace-id=Root=1-677eec59-42ebac255c28fff034b4fd48, x-forwarded-proto=https, host=txgbuoqwcp3nukwy62iqbmwnsi0jeasg.lambda-url.us-east-2.on.aws, x-forwarded-port=443, content-type=application/json, x-forwarded-for=24.17.173.226, user-agent=Java-http-client/23.0.1}, isBase64Encoded=false, rawPath=/, routeKey=$default, requestContext={accountId=anonymous, apiId=txgbuoqwcp3nukwy62iqbmwnsi0jeasg, domainName=txgbuoqwcp3nukwy62iqbmwnsi0jeasg.lambda-url.us-east-2.on.aws, domainPrefix=txgbuoqwcp3nukwy62iqbmwnsi0jeasg, http={method=POST, path=/, protocol=HTTP/1.1, sourceIp=24.17.173.226, userAgent=Java-http-client/23.0.1}, requestId=fed29e7c-5b0b-4f4a-8030-a7a166498dd4, routeKey=$default, stage=$default, time=08/Jan/2025:21:21:29 +0000, timeEpoch=1736371289433}, body={\\"name\\":\\"India\\"}, version=2.0, rawQueryString=}",
+                      "level": "UNDEFINED",
+                      "AWSRequestId": "fed29e7c-5b0b-4f4a-8030-a7a166498dd4"
                   }
                 ]
                 """;
 
         ObjectMapper objectMapper = new ObjectMapper();
-        List<PlatformLog> logs = objectMapper.readValue(
+        List<LogEntry> logs = objectMapper.readValue(
                 json,
-                objectMapper.getTypeFactory().constructCollectionType(List.class, PlatformLog.class)
+                objectMapper.getTypeFactory().constructCollectionType(List.class, LogEntry.class)
         );
 
-        for (PlatformLog log : logs) {
-            System.out.println("Time: " + log.time());
-            System.out.println("Type: " + log.type());
-            var record = log.record();
+        for (LogEntry log : logs) {
+            if (log instanceof PlatformLog platformLog) {
+                System.out.println("Time: " + platformLog.time());
+                System.out.println("Type: " + platformLog.type());
+                var record = platformLog.record();
 
-            if (record instanceof PlatformLog.InitStartRecord init) {
-                System.out.println("  [initStart] initializationType = " + init);
-            } else if (record instanceof PlatformLog.StartRecord start) {
-                System.out.println("  [start] requestId = " + start);
-            } else if (record instanceof PlatformLog.ReportRecord report) {
-                System.out.println("  [report] status = " + report);
+                if (record instanceof PlatformLog.InitStartRecord init) {
+                    System.out.println("  [initStart] initializationType = " + init.initializationType());
+                } else if (record instanceof PlatformLog.StartRecord start) {
+                    System.out.println("  [start] requestId = " + start.requestId());
+                } else if (record instanceof PlatformLog.ReportRecord report) {
+                    System.out.println("  [report] status = " + report.status());
+                }
+            } else if (log instanceof MessageLog messageLog) {
+                System.out.println("Timestamp: " + messageLog.timestamp());
+                System.out.println("Level: " + messageLog.level());
+                System.out.println("RequestId: " + messageLog.AWSRequestId());
+                System.out.println("Message: " + messageLog.message());
             }
 
             System.out.println("------------------------------------------------------");
         }
     }
 
+    @JsonTypeInfo(
+            use = JsonTypeInfo.Id.DEDUCTION
+    )
+    @JsonSubTypes({
+            @JsonSubTypes.Type(PlatformLog.class),
+            @JsonSubTypes.Type(MessageLog.class)
+    })
+    sealed interface LogEntry permits PlatformLog, MessageLog {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record MessageLog(
+            String timestamp,
+            String message,
+            String level,
+            String AWSRequestId
+    ) implements LogEntry {
+    }
 
     sealed interface BaseRecord
             permits PlatformLog.InitStartRecord, PlatformLog.StartRecord, PlatformLog.ReportRecord {
@@ -93,7 +124,7 @@ public interface AWSLogs {
                     @JsonSubTypes.Type(value = ReportRecord.class, name = "platform.report")
             })
             BaseRecord record
-    ) {
+    ) implements LogEntry {
 
         @JsonTypeName("platform.initStart")
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -136,5 +167,4 @@ public interface AWSLogs {
             }
         }
     }
-
 }
