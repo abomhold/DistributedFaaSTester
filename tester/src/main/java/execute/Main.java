@@ -1,5 +1,10 @@
 package execute;
 
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.cloudwatchlogs.model.DeleteLogGroupRequest;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,7 +20,8 @@ public class Main {
         List<JsonConfigs.Node> nodes = JsonConfigs.loadNodes("node.json");
         List<Map<String, Object>> payloads = JsonConfigs.loadPayloads("payload.json");
         HttpClient client = HttpClient.newHttpClient();
-
+        var cloudWatchClientLogs = CloudWatchLogsClient.builder().region(Region.US_EAST_2).build();
+        cloudWatchClientLogs.deleteLogGroup(DeleteLogGroupRequest.builder().logGroupName("/trace").build());
         payloads.forEach(payload -> {
             for (var node : nodes) {
                 String jsonPayload = toJsonString(payload);

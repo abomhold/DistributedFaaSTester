@@ -3,7 +3,6 @@ package collect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
@@ -66,37 +65,44 @@ public interface AWSLogs {
         );
 
         for (LogEntry log : logs) {
-            if (log instanceof PlatformLog platformLog) {
-                System.out.println("Time: " + platformLog.time());
-                System.out.println("Type: " + platformLog.type());
-                var record = platformLog.record();
-
-                if (record instanceof PlatformLog.InitStartRecord init) {
-                    System.out.println("  [initStart] initializationType = " + init.initializationType());
-                } else if (record instanceof PlatformLog.StartRecord start) {
-                    System.out.println("  [start] requestId = " + start.requestId());
-                } else if (record instanceof PlatformLog.ReportRecord report) {
-                    System.out.println("  [report] status = " + report.status());
-                }
+            if (log instanceof PlatformInitStartLog initStartLog) {
+                System.out.println("  [initStart]" + initStartLog);
+            } else if (log instanceof PlatformStartLog startLog) {
+                System.out.println("  [start]" + startLog);
+            } else if (log instanceof PlatformReportLog reportLog) {
+                System.out.println("  [report]" + reportLog);
             } else if (log instanceof MessageLog messageLog) {
-                System.out.println("Timestamp: " + messageLog.timestamp());
-                System.out.println("Level: " + messageLog.level());
-                System.out.println("RequestId: " + messageLog.AWSRequestId());
-                System.out.println("Message: " + messageLog.message());
+                System.out.println("Message: " + messageLog);
             }
-
-            System.out.println("------------------------------------------------------");
         }
     }
+    record Message(
+            String initializationType,
+            String phase,
+            String runtimeVersion,
+            String runtimeVersionArn,
+            String functionName,
+            String functionVersion,
+            String instanceId,
+            long instanceMaxMemory,
+            String requestId,
+            String version,
+            String status
+    ){}
 
     @JsonTypeInfo(
-            use = JsonTypeInfo.Id.DEDUCTION
+            use = JsonTypeInfo.Id.NAME,
+            include = JsonTypeInfo.As.PROPERTY,
+            property = "type",
+            defaultImpl = MessageLog.class // Use MessageLog as the default when `type` is missing
     )
     @JsonSubTypes({
-            @JsonSubTypes.Type(PlatformLog.class),
-            @JsonSubTypes.Type(MessageLog.class)
+            @JsonSubTypes.Type(value = PlatformInitStartLog.class, name = "platform.initStart"),
+            @JsonSubTypes.Type(value = PlatformStartLog.class, name = "platform.start"),
+            @JsonSubTypes.Type(value = PlatformReportLog.class, name = "platform.report"),
+            @JsonSubTypes.Type(value = MessageLog.class, name = "message")
     })
-    sealed interface LogEntry permits PlatformLog, MessageLog {
+    sealed interface LogEntry permits PlatformInitStartLog, PlatformStartLog, PlatformReportLog, MessageLog {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -108,25 +114,13 @@ public interface AWSLogs {
     ) implements LogEntry {
     }
 
-    sealed interface BaseRecord
-            permits PlatformLog.InitStartRecord, PlatformLog.StartRecord, PlatformLog.ReportRecord {
-    }
-
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record PlatformLog(
+    record PlatformInitStartLog(
             String time,
             String type,
-
-            @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "type")
-            @JsonSubTypes({
-                    @JsonSubTypes.Type(value = InitStartRecord.class, name = "platform.initStart"),
-                    @JsonSubTypes.Type(value = StartRecord.class, name = "platform.start"),
-                    @JsonSubTypes.Type(value = ReportRecord.class, name = "platform.report")
-            })
-            BaseRecord record
+            InitStartRecord record
     ) implements LogEntry {
 
-        @JsonTypeName("platform.initStart")
         @JsonIgnoreProperties(ignoreUnknown = true)
         public record InitStartRecord(
                 String initializationType,
@@ -137,24 +131,38 @@ public interface AWSLogs {
                 String functionVersion,
                 String instanceId,
                 long instanceMaxMemory
-        ) implements BaseRecord {
+        ) {
         }
+    }
 
-        @JsonTypeName("platform.start")
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record PlatformStartLog(
+            String time,
+            String type,
+            StartRecord record
+    ) implements LogEntry {
+
         @JsonIgnoreProperties(ignoreUnknown = true)
         public record StartRecord(
                 String requestId,
                 String version
-        ) implements BaseRecord {
+        ) {
         }
+    }
 
-        @JsonTypeName("platform.report")
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record PlatformReportLog(
+            String time,
+            String type,
+            ReportRecord record
+    ) implements LogEntry {
+
         @JsonIgnoreProperties(ignoreUnknown = true)
         public record ReportRecord(
                 String requestId,
                 Metrics metrics,
                 String status
-        ) implements BaseRecord {
+        ) {
 
             @JsonIgnoreProperties(ignoreUnknown = true)
             public record Metrics(
