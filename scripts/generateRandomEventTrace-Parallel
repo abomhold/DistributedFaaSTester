@@ -1,0 +1,93 @@
+#!/bin/bash
+#
+# Script to generate JSON objects with payloads as an array of objects for event traces.
+# Supports parallel execution for faster generation.
+#
+# Copyright 2025 Austin
+# Licensed under the MIT License.
+
+# Constants
+declare -r PAYLOADS=(
+  "Austin"
+  "Bravo"
+  "Charlie"
+  "Delta"
+  "Echo"
+  "Foxtrot"
+  "Golf"
+  "Hotel"
+  "India"
+  "Juliet"
+  "Kilo"
+  "Lloyd"
+  "Mike"
+  "November"
+  "Oscar"
+  "Papa"
+  "Quebec"
+  "Romeo"
+  "Seira"
+  "Tomoki"
+  "Uniform"
+  "Victor"
+  "Wiskey"
+  "XRay"
+  "Yanky"
+  "Zulu"
+)
+
+# Functions
+
+## generateEvenJsonObject
+function generateEvenJsonObject() {
+  jq -n --argjson eventID "$1" \
+    --arg timeFromStart "$2" \
+    --arg nodeID "$3" \
+    --argjson payload "$(echo "$4" | jq -R '{"name": .}')" \
+    --arg endpoint "$5" \
+    '$ARGS.named'
+}
+
+## generateRandomEventTrace
+function generateRandomEventTrace() {
+  local startIndex=$1
+  local endIndex=$2
+  local duration=$3
+  local numWorkers=$4
+  for ((i = startIndex; i < endIndex; i++)); do
+    local eventId=$((${i} + 1))
+    local timeFromStart=$(((RANDOM % ${duration}) + 1001))
+    local payload="${PAYLOADS[($i % ${#PAYLOADS[@]})]}"
+    local nodeId=$(printf 'Worker%s' "$(((RANDOM % ${numWorkers}) + 1))")
+    generateEvenJsonObject $eventId $timeFromStart $nodeId $payload "Endpoint1"
+  done
+}
+
+## main
+function main() {
+  local DURATION=${1-1000}
+  local NUM_EVENTS=${2-10000}
+  local NUM_WORKERS=${3-3}
+  local NUM_PROCESSES=${4-10} # Number of parallel processes
+
+  # Split the events among parallel processes
+  local eventsPerProcess=$((NUM_EVENTS / NUM_PROCESSES))
+  local remainder=$((NUM_EVENTS % NUM_PROCESSES))
+
+  for ((p = 0; p < NUM_PROCESSES; p++)); do
+    local startIndex=$((p * eventsPerProcess))
+    local endIndex=$((startIndex + eventsPerProcess))
+    # Distribute the remainder to the last process
+    if [[ $p -eq $((NUM_PROCESSES - 1)) ]]; then
+      endIndex=$((endIndex + remainder))
+    fi
+    # Run each process in the background
+    generateRandomEventTrace "$startIndex" "$endIndex" "$DURATION" "$NUM_WORKERS" &
+  done
+
+  # Wait for all background processes to complete
+  wait
+}
+
+# Entry point
+main "$@"

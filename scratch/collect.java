@@ -59,3 +59,13 @@
 //        cloudWatchLogsClient.close();
 //    }
 //}
+
+LogStream(
+        LogStreamName=2025/01/08/worker10[$LATEST]19dd386b47514caeb98295dd3f974aed,
+        CreationTime=1736376683773,
+        FirstEventTimestamp=1736376679970,
+        LastEventTimestamp=1736376680426,
+        LastIngestionTime=1736376683781,
+        UploadSequenceToken=49039859615748942777344389947211247933342356110702016942,
+        Arn=arn:aws:logs:us-east-2:980921732919:log-group:/trace:log-stream:2025/01/08/worker10[$LATEST]19dd386b47514caeb98295dd3f974aed,
+        StoredBytes=0)

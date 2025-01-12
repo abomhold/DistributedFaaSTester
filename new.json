@@ -1,0 +1,44 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AWSAccount",
+    "principalId": "anonymous",
+    "accountId": "aws"
+  },
+  "eventTime": "2025-01-08T19:56:24Z",
+  "eventSource": "lambda.amazonaws.com",
+  "eventName": "Invoke",
+  "awsRegion": "us-east-2",
+  "sourceIPAddress": "24.17.173.226",
+  "userAgent": "Java-http-client/23.0.1",
+  "requestParameters": {
+    "functionName": "arn:aws:lambda:us-east-2:980921732919:function:worker8",
+    "invocationType": "RequestResponse",
+    "logType": "None",
+    "contentType": "application/json"
+  },
+  "responseElements": null,
+  "additionalEventData": {
+    "functionVersion": "arn:aws:lambda:us-east-2:980921732919:function:worker8:$LATEST"
+  },
+  "requestID": "869ec193-7f9f-4759-8f0e-b73fdcb4dd7f",
+  "eventID": "06839fad-bb07-4ec0-89ef-fb4968de5b0a",
+  "readOnly": false,
+  "resources": [
+    {
+      "accountId": "980921732919",
+      "type": "AWS::Lambda::Function",
+      "ARN": "arn:aws:lambda:us-east-2:980921732919:function:worker8"
+    }
+  ],
+  "eventType": "AwsApiCall",
+  "managementEvent": false,
+  "recipientAccountId": "980921732919",
+  "sharedEventID": "f8a1a55a-f250-4424-9ef6-996130fd6525",
+  "eventCategory": "Data",
+  "tlsDetails": {
+    "tlsVersion": "TLSv1.3",
+    "cipherSuite": "TLS_AES_128_GCM_SHA256",
+    "clientProvidedHostHeader": "hnmiaxbd7u75aamgtq5cb36jsi0rerew.lambda-url.us-east-2.on.aws"
+  }
+}
