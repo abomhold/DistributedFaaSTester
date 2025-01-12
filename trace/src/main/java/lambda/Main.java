@@ -12,21 +12,22 @@ import java.util.Map;
 
 public class Main implements RequestHandler<HashMap<String, Object>, HashMap<String, Object>> {
 
-    private static void parseBody(Map<String, Object> request) {
-        try {
-            new ObjectMapper()
-                    .readValue(request.remove("body").toString(), new TypeReference<Map<String, String>>() {
-                    })
-                    .entrySet()
-                    .stream()
-                    .forEach(e -> request.put(e.getKey(), e.getValue()));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    private static void parseBody(Map<String, Object> request) {
+//        try {
+//            new ObjectMapper()
+//                    .readValue(request.remove("body").toString(), new TypeReference<Map<String, String>>() {
+//                    })
+//                    .entrySet()
+//                    .stream()
+//                    .forEach(e -> request.put(e.getKey(), e.getValue()));
+//        } catch (JsonProcessingException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
 
     public HashMap<String, Object> handleRequest(HashMap<String, Object> request, Context context) {
-        context.getLogger().log(request.get("body").toString());
+
+//        context.getLogger().log("payload" + request.get("body").toString() + "initTime" + );
         return new HashMap<>(Map.of("requestId", context.getAwsRequestId()));
     }
 }

@@ -13,7 +13,7 @@ public class Main {
                 Region.US_EAST_2,
                 LogGroup.builder().logGroupName("/trace").build(),
                 1736517244238L,
-                1736517246000L);
+                1736517245L);
 
         try {
             logPool.writeJson("out_simple.json");
