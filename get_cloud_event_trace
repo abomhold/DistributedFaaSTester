@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+function get_log_streams() {
+  aws logs describe-log-streams \
+    --log-group-name "$1" \
+    | jq -r '.logStreams[].logStreamName'
+}
+
+function get_log_events() {
+  aws logs get-log-events \
+    --log-group-name "$1" \
+    --log-stream-name "$2" \
+    | jq -r '
+    	.events[].message
+    	| fromjson
+    	| select(.type == "platform.start")
+    	| {eventId: .record.requestId, time: .time}
+	' &
+}
+
+function log_event_loop(){
+    for log_stream in "${1[@]}"; do
+      get_log_events "$log_group" "$log_stream"
+    done
+}
+
+function generate_event_json_object() {
+  jq -n --argjson eventID "$1" \
+    --arg timeFromStart "$2" \
+    --arg nodeID "$3" \
+    --argjson payload "$(echo "$4" | jq -R '{"name": .}')" \
+    --arg endpoint "$5" \
+    '$ARGS.named'
+}
+
+function main() {
+  log_group="${1-/trace}"
+  mapfile -t log_streams < <(get_log_streams $log_group)
+  mapfile -t all_events < <(log_event_loop log_streams)
+
+  for event in "${all_events[@]}"; do
+    echo "$event"
+  done
+}
+
+
+# 	mapfile -t event_trace < <(
+#   	for event in "$all_events[@]"; do
+#       	echo "$event"
+#   	done
+# 	)
+
+# Print the combined events as ONE JSON array
+# 	printf '%s\n' "${all_events[@]}"
+
+main "$@"

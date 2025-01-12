@@ -1,0 +1,39 @@
+[
+  {
+    "time": "2025-01-07T19:49:07.089Z",
+    "type": "platform.initStart",
+    "record": {
+      "initializationType": "on-demand",
+      "phase": "init",
+      "runtimeVersion": "java:21.v27",
+      "runtimeVersionArn": "arn:aws:lambda:us-east-2::runtime:1fe198c3259fb2d78c1f0033293d1f68b2d4a528b2288b3a3fd80a5b6089872f",
+      "functionName": "worker10",
+      "functionVersion": "$LATEST",
+      "instanceId": "2025/01/07/worker10[$LATEST]002cf7829acf404ea7f6995e1910b96b",
+      "instanceMaxMemory": 1879048192
+    }
+  },
+  {
+    "time": "2025-01-07T19:49:07.595Z",
+    "type": "platform.start",
+    "record": {
+      "requestId": "06e8554f-3109-426f-8992-0c834de2ac20",
+      "version": "$LATEST"
+    }
+  },
+  {
+    "time": "2025-01-07T19:49:07.924Z",
+    "type": "platform.report",
+    "record": {
+      "requestId": "06e8554f-3109-426f-8992-0c834de2ac20",
+      "metrics": {
+        "durationMs": 329.177,
+        "billedDurationMs": 330,
+        "memorySizeMB": 1792,
+        "maxMemoryUsedMB": 125,
+        "initDurationMs": 503.083
+      },
+      "status": "success"
+    }
+  }
+]
