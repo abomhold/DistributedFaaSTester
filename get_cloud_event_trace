@@ -1,56 +1,74 @@
 #!/usr/bin/env bash
 
+# Retrieves all log stream names for a given log group.
 function get_log_streams() {
   aws logs describe-log-streams \
     --log-group-name "$1" \
     | jq -r '.logStreams[].logStreamName'
 }
 
+# Retrieves events from a given log group/stream combo
+# and filters down to just "platform.start" events.
 function get_log_events() {
+  local log_group="$1"
+  local log_stream="$2"
+
   aws logs get-log-events \
-    --log-group-name "$1" \
-    --log-stream-name "$2" \
+    --log-group-name "$log_group" \
+    --log-stream-name "$log_stream" \
     | jq -r '
-    	.events[].message
-    	| fromjson
-    	| select(.type == "platform.start")
-    	| {eventId: .record.requestId, time: .time}
-	' &
+      .events[].message
+      | fromjson
+      | select(.type == "platform.start")
+      | {eventId: .record.requestId, time: .time}
+    ' &
 }
 
-function log_event_loop(){
-    for log_stream in "${1[@]}"; do
-      get_log_events "$log_group" "$log_stream"
-    done
+# Iterates through the passed-in log streams and prints matching log events.
+function log_event_loop() {
+  local log_group="$1"
+  shift  # Shift to consume the first parameter so we can iterate over the rest
+
+  for log_stream in "$@"; do
+    get_log_events "$log_group" "$log_stream"
+  done
 }
 
+# Example JSON generator function (not currently used in the main flow).
 function generate_event_json_object() {
-  jq -n --argjson eventID "$1" \
-    --arg timeFromStart "$2" \
-    --arg nodeID "$3" \
-    --argjson payload "$(echo "$4" | jq -R '{"name": .}')" \
-    --arg endpoint "$5" \
+  local event_id="$1"
+  local time_from_start="$2"
+  local node_id="$3"
+  local payload="$4"
+  local endpoint="$5"
+
+  # We use `--argjson` when passing a JSON literal. For strings, we use `--arg`.
+  # Here, we interpret `event_id` as a JSON numeric type; adjust if needed.
+  jq -n \
+    --argjson eventID "$event_id" \
+    --arg timeFromStart "$time_from_start" \
+    --arg nodeID "$node_id" \
+    --argjson payload "$(echo "$payload" | jq -R '{"name": .}')" \
+    --arg endpoint "$endpoint" \
     '$ARGS.named'
 }
 
 function main() {
-  log_group="${1-/trace}"
-  mapfile -t log_streams < <(get_log_streams $log_group)
-  mapfile -t all_events < <(log_event_loop log_streams)
+  # Set log_group from first argument or default to "/trace".
+  local log_group="${1-/trace}"
 
+  # Use mapfile to store the log stream list into an array.
+  mapfile -t log_streams < <(get_log_streams "$log_group")
+
+  # Capture all matching events into an array.
+  # Pass log_group first, followed by the list of log_streams.
+  mapfile -t all_events < <(log_event_loop "$log_group" "${log_streams[@]}")
+
+  # Print all events.
   for event in "${all_events[@]}"; do
     echo "$event"
   done
 }
 
-
-# 	mapfile -t event_trace < <(
-#   	for event in "$all_events[@]"; do
-#       	echo "$event"
-#   	done
-# 	)
-
-# Print the combined events as ONE JSON array
-# 	printf '%s\n' "${all_events[@]}"
-
+# Execute main with all script arguments.
 main "$@"
