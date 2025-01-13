@@ -1,8 +1,8 @@
 {
   "nodes": [
     {
-      "id": "traceLambda",
-      "ip": "https://zbfu3sqinzuhcpu7d5wdsiwyce0qghzh.lambda-url.us-east-2.on.aws/",
+      "id": "trace",
+      "ip": "https://5nhpljvch7gf5zbpxx6kqxovhi0icsea.lambda-url.us-east-2.on.aws/",
       "platform": "AWS",
       "nodeType": "worker",
       "tcpPort": "8080",

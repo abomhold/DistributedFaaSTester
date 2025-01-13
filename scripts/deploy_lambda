@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+
+# Creates an IAM role for the Lambda function.
+function create_lambda_role() {
+    local role_name="$1"
+
+    aws iam create-role \
+        --role-name "$role_name" \
+        --assume-role-policy-document '{
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
+            }]
+        }' &>/dev/null
+
+    aws iam attach-role-policy \
+        --role-name "$role_name" \
+        --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" || sleep 10
+
+
+    # Retrieve and return the role ARN
+    aws iam get-role --role-name "$role_name" | jq -r .Role.Arn
+}
+
+# Creates temp directory and packages Lambda function
+function package_lambda() {
+    local temp_dir=$(mktemp -d)
+    # Create lambda function file
+    cat << 'EOF' > "$temp_dir/lambda_function.py"
+import json
+import logging
+
+def lambda_handler(event, context):
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    headers = event.get("headers", {})
+    client_ip = headers.get("x-forwarded-for", "unknown")
+    body = event.get("body", "")
+    payload = json.loads(body)
+    log_entry = {
+        "clientIp": client_ip,
+        "payload": payload
+    }
+    logger.info(json.dumps(log_entry))
+    return {
+        "statusCode": 200,
+        "body": json.dumps(payload)
+    }
+EOF
+
+    # Create deployment package
+    (cd "$temp_dir" && zip -r function.zip *) &>/dev/null
+
+    echo "$temp_dir"
+}
+
+# Creates an AWS Lambda function.
+function create_lambda_function() {
+    local function_name="$1"
+    local runtime="$2"
+    local role_arn="$3"
+    local handler="$4"
+    local temp_dir="$5"
+    local log_group="$6"
+    aws lambda create-function \
+        --function-name "$function_name" \
+        --runtime "$runtime" \
+        --role "$role_arn" \
+        --handler "$handler" \
+        --logging-config "LogFormat=JSON,LogGroup=$log_group" \
+        --zip-file "fileb://$temp_dir/function.zip" \
+        --publish | jq
+
+    aws lambda create-function-url-config \
+        --function-name "$function_name" \
+        --auth-type "NONE" \
+        | jq --arg function "$function_name" \
+            --arg platform "AWS Lambda" \
+            --arg source "$(pwd)" \
+            '($ARGS.named) + {endpoint: .FunctionUrl}'
+
+
+}
+
+# Deletes an existing Lambda function by name.
+function delete_lambda_function() {
+    local function_name="$1"
+
+    if aws lambda get-function --function-name "$function_name" &>/dev/null; then
+        echo "Deleting existing function: $function_name"
+        aws lambda delete-function --function-name "$function_name"
+        aws lambda delete-function-url-config --function-name "$function_name"
+        echo "Waiting for deletion to complete..."
+        sleep 3
+    fi
+}
+
+# Cleanup temporary directory
+function cleanup() {
+    local temp_dir="$1"
+    if [ -d "$temp_dir" ]; then
+        rm -rf "$temp_dir"
+    fi
+}
+
+# Main function to deploy an inline AWS Lambda function.
+function main() {
+    local function_name="trace"
+    local runtime="python3.13"
+    local role_name="trace-lambda-role"
+    local handler="lambda_function.lambda_handler"
+
+    # Create the role if it does not exist
+    echo "Creating IAM role: $role_name"
+    local role_arn=$(create_lambda_role "$role_name")
+
+    # Create deployment package in temp directory
+    local temp_dir=$(package_lambda)
+
+    # Delete existing function if it exists
+    delete_lambda_function "$function_name"
+
+    # Create new function
+    echo "Creating new function: $function_name"
+    create_lambda_function "$function_name" "$runtime" "$role_arn" "$handler" "$temp_dir" "/trace" \
+      | jq
+
+    # Cleanup
+    cleanup "$temp_dir"
+
+}
+
+# Execute main with all script arguments
+main "$@"

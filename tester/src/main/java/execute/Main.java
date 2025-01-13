@@ -21,7 +21,7 @@ public class Main {
         List<Map<String, Object>> payloads = JsonConfigs.loadPayloads("payload.json");
         HttpClient client = HttpClient.newHttpClient();
         var cloudWatchClientLogs = CloudWatchLogsClient.builder().region(Region.US_EAST_2).build();
-        cloudWatchClientLogs.deleteLogGroup(DeleteLogGroupRequest.builder().logGroupName("/trace").build());
+//        cloudWatchClientLogs.deleteLogGroup(DeleteLogGroupRequest.builder().logGroupName("/aws/lambda/trace").build());
         payloads.forEach(payload -> {
             for (var node : nodes) {
                 String jsonPayload = toJsonString(payload);
