@@ -5,38 +5,58 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import saaf.Response;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class Main implements RequestHandler<HashMap<String, Object>, HashMap<String, Object>> {
 
-    private static void parseBody(Map<String, Object> request) {
+    private static HashMap<String, Object> parseBody(Map<String, Object> request) {
+        HashMap<String, Object> payload;
         try {
-            new ObjectMapper()
-                    .readValue(request.remove("body").toString(), new TypeReference<Map<String, String>>() {
-                    })
-                    .entrySet()
-                    .stream()
-                    .forEach(e -> request.put(e.getKey(), e.getValue()));
+            payload = new ObjectMapper().readValue(
+                    request.remove("body").toString(),
+                    new TypeReference<>() {}
+            );
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error parsing request body: " + e.getMessage(), e);
         }
+        return payload;
     }
 
+    @Override
     public HashMap<String, Object> handleRequest(HashMap<String, Object> request, Context context) {
-        ObjectMapper om = new ObjectMapper();
-        Map<String,Object> eventlog = Map.of(
-                "payload", request.get("body").toString(),
-                "nodeId", context.getClientContext().getEnvironment()
-        );
-        om.writerWithDefaultPrettyPrinter().writeValue();
-        context.getLogger().log("payload" + request.get("body").toString() + "" + );
-        return new HashMap<>(Map.of("requestId", context.getAwsRequestId()));
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> headers = (Map<String, Object>) request.get("headers");
+
+        // Extract client IP
+        String clientIp = headers != null && headers.get("x-forwarded-for") != null
+                ? headers.get("x-forwarded-for").toString()
+                : "unknown";
+
+        // Parse request body
+        HashMap<String, Object> payload = parseBody(request);
+
+        // Prepare trace details
+        HashMap<String, Object> traceDetails = new HashMap<>(Map.of(
+                "clientIp", clientIp,
+                "payload", payload
+        ));
+//        String message = traceDetails.toString();
+//        context.getLogger().log(message);
+//        Log as JSON
+        try {
+            String jsonLog = objectMapper.writeValueAsString(traceDetails);
+            context.getLogger().log(jsonLog);
+        } catch (JsonProcessingException e) {
+            context.getLogger().log("Error serializing trace details: " + e.getMessage());
+            throw new RuntimeException("Failed to log trace details", e);
+        }
+
+        // Return trace details
+        return traceDetails;
     }
 }
-
 //        //Collect inital data
 //        Inspector inspector = new Inspector();
 //        inspector.inspectContainer();

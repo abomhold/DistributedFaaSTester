@@ -7,8 +7,7 @@ function get_log_streams() {
     | jq -r '.logStreams[].logStreamName'
 }
 
-# Retrieves events from a given log group/stream combo
-# and filters down to just "platform.start" events.
+# Retrieves events from a given log group/stream combo.
 function get_log_events() {
   local log_group="$1"
   local log_stream="$2"
@@ -16,59 +15,62 @@ function get_log_events() {
   aws logs get-log-events \
     --log-group-name "$log_group" \
     --log-stream-name "$log_stream" \
-    | jq -r '
-      .events[].message
-      | fromjson
-      | select(.type == "platform.start")
-      | {eventId: .record.requestId, time: .time}
-    ' &
+    | jq -c '.events[]' &
 }
 
-# Iterates through the passed-in log streams and prints matching log events.
-function log_event_loop() {
-  local log_group="$1"
-  shift  # Shift to consume the first parameter so we can iterate over the rest
+# Parses log events to extract "platform.start" and "message" logs.
+function parse_log_events() {
+  local log_events="$1"
 
-  for log_stream in "$@"; do
-    get_log_events "$log_group" "$log_stream"
+  local request_id=""
+  local start_time=""
+  local client_ip=""
+  local payload=""
+
+  # Iterate through each log event
+  echo "$log_events" | while read -r log; do
+    # Decode each log message safely
+    local log_decoded
+    log_decoded=$(echo "$log" | jq -c '. | fromjson? // {}' 2>/dev/null || echo "{}")
+
+    # Check for "platform.start" type
+    if [[ $(echo "$log_decoded" | jq -r '.type // empty') == "platform.start" ]]; then
+      request_id=$(echo "$log_decoded" | jq -r '.record.requestId // empty')
+      start_time=$(echo "$log_decoded" | jq -r '.time // empty')
+      if [[ -n $request_id && -n $start_time ]]; then
+        printf "Start Time: %s\nRequest ID: %s\n" "$start_time" "$request_id"
+      fi
+    fi
+
+    # Check for logs with "clientIp" and "payload" in the message field
+    if [[ $(echo "$log_decoded" | jq -r '.message // empty' | grep -q "clientIp") ]]; then
+      client_ip=$(echo "$log_decoded" | jq -r '.message' | jq -r '.clientIp // empty' 2>/dev/null)
+      payload=$(echo "$log_decoded" | jq -r '.message' | jq -r '.payload.name // empty' 2>/dev/null)
+      if [[ -n $client_ip && -n $payload ]]; then
+        printf "Client IP: %s\nPayload: %s\n" "$client_ip" "$payload"
+      fi
+    fi
   done
 }
 
-# Example JSON generator function (not currently used in the main flow).
-function generate_event_json_object() {
-  local event_id="$1"
-  local time_from_start="$2"
-  local node_id="$3"
-  local payload="$4"
-  local endpoint="$5"
-
-  # We use `--argjson` when passing a JSON literal. For strings, we use `--arg`.
-  # Here, we interpret `event_id` as a JSON numeric type; adjust if needed.
-  jq -n \
-    --argjson eventID "$event_id" \
-    --arg timeFromStart "$time_from_start" \
-    --arg nodeID "$node_id" \
-    --argjson payload "$(echo "$payload" | jq -R '{"name": .}')" \
-    --arg endpoint "$endpoint" \
-    '$ARGS.named'
-}
-
+# Main function to iterate through log streams and parse logs.
 function main() {
-  # Set log_group from first argument or default to "/trace".
-  local log_group="${1-/trace}"
+  local log_group="$1"
 
-  # Use mapfile to store the log stream list into an array.
+  if [[ -z "$log_group" ]]; then
+    printf "Usage: %s <log_group>\n" "$0" >&2
+    exit 1
+  fi
+
+  # Retrieve all log streams for the log group.
   mapfile -t log_streams < <(get_log_streams "$log_group")
 
-  # Capture all matching events into an array.
-  # Pass log_group first, followed by the list of log_streams.
-  mapfile -t all_events < <(log_event_loop "$log_group" "${log_streams[@]}")
-
-  # Print all events.
-  for event in "${all_events[@]}"; do
-    echo "$event"
+  for log_stream in "${log_streams[@]}"; do
+    # Retrieve and parse log events from the current log stream.
+    log_events=$(get_log_events "$log_group" "$log_stream")
+    parse_log_events "$log_events"
   done
 }
 
-# Execute main with all script arguments.
-main "$@"
+# Execute main function with the specified log group.
+main "/trace"

@@ -30,10 +30,10 @@ Globals:
     PropagateTags: true
 
 Resources:
-  worker1:
+  traceLambda:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: worker1
+      FunctionName: traceLambda
       Description: 'Lambda function for encoding'
       PackageType: Zip
       CodeUri: ./
@@ -46,149 +46,6 @@ Resources:
         LogFormat: JSON
         LogGroup: !Ref LogGroup
 
-  worker2:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: worker2
-      Description: 'Lambda function for encoding'
-      PackageType: Zip
-      CodeUri: ./
-      Handler: lambda.Main::handleRequest
-      Policies:
-        - AWSLambdaBasicExecutionRole
-      FunctionUrlConfig:
-        AuthType: NONE
-      LoggingConfig:
-        LogFormat: JSON
-        LogGroup: !Ref LogGroup
-
-  worker3:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: worker3
-      Description: 'Lambda function for encoding'
-      PackageType: Zip
-      CodeUri: ./
-      Handler: lambda.Main::handleRequest
-      Policies:
-        - AWSLambdaBasicExecutionRole
-      FunctionUrlConfig:
-        AuthType: NONE
-      LoggingConfig:
-        LogFormat: JSON
-        LogGroup: !Ref LogGroup
-
-  worker4:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: worker4
-      Description: 'Lambda function for encoding'
-      PackageType: Zip
-      CodeUri: ./
-      Handler: lambda.Main::handleRequest
-      Policies:
-        - AWSLambdaBasicExecutionRole
-      FunctionUrlConfig:
-        AuthType: NONE
-      LoggingConfig:
-        LogFormat: JSON
-        LogGroup: !Ref LogGroup
-
-  worker5:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: worker5
-      Description: 'Lambda function for encoding'
-      PackageType: Zip
-      CodeUri: ./
-      Handler: lambda.Main::handleRequest
-      Policies:
-        - AWSLambdaBasicExecutionRole
-      FunctionUrlConfig:
-        AuthType: NONE
-      LoggingConfig:
-        LogFormat: JSON
-        LogGroup: !Ref LogGroup
-
-  worker6:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: worker6
-      Description: 'Lambda function for encoding'
-      PackageType: Zip
-      CodeUri: ./
-      Handler: lambda.Main::handleRequest
-      Policies:
-        - AWSLambdaBasicExecutionRole
-      FunctionUrlConfig:
-        AuthType: NONE
-      LoggingConfig:
-        LogFormat: JSON
-        LogGroup: !Ref LogGroup
-
-  worker7:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: worker7
-      Description: 'Lambda function for encoding'
-      PackageType: Zip
-      CodeUri: ./
-      Handler: lambda.Main::handleRequest
-      Policies:
-        - AWSLambdaBasicExecutionRole
-      FunctionUrlConfig:
-        AuthType: NONE
-      LoggingConfig:
-        LogFormat: JSON
-        LogGroup: !Ref LogGroup
-
-  worker8:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: worker8
-      Description: 'Lambda function for encoding'
-      PackageType: Zip
-      CodeUri: ./
-      Handler: lambda.Main::handleRequest
-      Policies:
-        - AWSLambdaBasicExecutionRole
-      FunctionUrlConfig:
-        AuthType: NONE
-      LoggingConfig:
-        LogFormat: JSON
-        LogGroup: !Ref LogGroup
-
-  worker9:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: worker9
-      Description: 'Lambda function for encoding'
-      PackageType: Zip
-      CodeUri: ./
-      Handler: lambda.Main::handleRequest
-      Policies:
-        - AWSLambdaBasicExecutionRole
-      FunctionUrlConfig:
-        AuthType: NONE
-      LoggingConfig:
-        LogFormat: JSON
-        LogGroup: !Ref LogGroup
-
-  worker10:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: worker10
-      Description: 'Lambda function for encoding'
-      PackageType: Zip
-      CodeUri: ./
-      Handler: lambda.Main::handleRequest
-      Policies:
-        - AWSLambdaBasicExecutionRole
-      FunctionUrlConfig:
-        AuthType: NONE
-      LoggingConfig:
-        LogFormat: JSON
-        LogGroup: !Ref LogGroup
 
 
   # SecurityGroup:
@@ -236,68 +93,9 @@ Outputs:
   # controller:
   #   Description: "Controller Node ip"
   #   Value: !GetAtt controller.PublicIp
-  worker1:
-    Description: "worker1 Function ARN"
-    Value: !GetAtt worker1.Arn
-  worker1host:
-    Description: "worker1 host url"
-    Value: !GetAtt worker1Url.FunctionUrl
-  worker2:
-    Description: "worker2 Function ARN"
-    Value: !GetAtt worker2.Arn
-  worker2host:
-    Description: "worker2 host url"
-    Value: !GetAtt worker2Url.FunctionUrl
-  worker3:
-    Description: "worker3 Function ARN"
-    Value: !GetAtt worker3.Arn
-  worker3host:
-    Description: "worker3 host url"
-    Value: !GetAtt worker3Url.FunctionUrl
-  worker4:
-    Description: "worker4 Function ARN"
-    Value: !GetAtt worker4.Arn
-  worker4host:
-    Description: "worker4 host url"
-    Value: !GetAtt worker4Url.FunctionUrl
-  worker5:
-    Description: "worker5 Function ARN"
-    Value: !GetAtt worker5.Arn
-  worker5host:
-    Description: "worker5 host url"
-    Value: !GetAtt worker5Url.FunctionUrl
-  worker6:
-    Description: "worker6 Function ARN"
-    Value: !GetAtt worker6.Arn
-  worker6host:
-    Description: "worker6 host url"
-    Value: !GetAtt worker6Url.FunctionUrl
-  worker7:
-    Description: "worker7 Function ARN"
-    Value: !GetAtt worker7.Arn
-  worker7host:
-    Description: "worker7 host url"
-    Value: !GetAtt worker7Url.FunctionUrl
-  worker8:
-    Description: "worker8 Function ARN"
-    Value: !GetAtt worker8.Arn
-  worker8host:
-    Description: "worker8 host url"
-    Value: !GetAtt worker8Url.FunctionUrl
-  worker9:
-    Description: "worker9 Function ARN"
-    Value: !GetAtt worker9.Arn
-  worker9host:
-    Description: "worker9 host url"
-    Value: !GetAtt worker9Url.FunctionUrl
-  worker10:
-    Description: "worker10 Function ARN"
-    Value: !GetAtt worker10.Arn
-  worker10host:
-    Description: "worker10 host url"
-    Value: !GetAtt worker10Url.FunctionUrl
-
-
-
-
-
+  traceLambda:
+    Description: "Function ARN"
+    Value: !GetAtt traceLambda.Arn
+  traceLambdahost:
+    Description: "Lambda URL"
+    Value: !GetAtt traceLambdaUrl.FunctionUrl

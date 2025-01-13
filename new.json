@@ -1,44 +1,51 @@
-{
-  "eventVersion": "1.08",
-  "userIdentity": {
-    "type": "AWSAccount",
-    "principalId": "anonymous",
-    "accountId": "aws"
+[
+  {
+    "timestamp": "2025-01-13T03:41:37.849Z",
+    "message": "Event:
+    "level": "UNDEFINED",
+    "AWSRequestId": "76cf2f42-7506-43ea-b594-669efdc8d492"
   },
-  "eventTime": "2025-01-08T19:56:24Z",
-  "eventSource": "lambda.amazonaws.com",
-  "eventName": "Invoke",
-  "awsRegion": "us-east-2",
-  "sourceIPAddress": "24.17.173.226",
-  "userAgent": "Java-http-client/23.0.1",
-  "requestParameters": {
-    "functionName": "arn:aws:lambda:us-east-2:980921732919:function:worker8",
-    "invocationType": "RequestResponse",
-    "logType": "None",
-    "contentType": "application/json"
+  {
+    headers={
+    x-amzn-tls-cipher-suite=TLS_AES_128_GCM_SHA256,
+    content-length=17,
+    x-amzn-tls-version=TLSv1.3,
+    x-amzn-trace-id=Root=1-67848b71-02dad67c35d4df151f93adf6,
+    x-forwarded-proto=https,
+    host=q7vop3bzlljjxu7hl6p53uw5pq0scroq.lambda-url.us-east-2.on.aws,
+    x-forwarded-port=443,
+    content-type=application/json,
+    x-forwarded-for=24.17.173.226,
+    user-agent=Java-http-client/23.0.1},
+  isBase64Encoded=false,
+  rawPath=/,
+  routeKey=$default,
+  requestContext=
+  {
+    accountId=anonymous,
+    apiId=q7vop3bzlljjxu7hl6p53uw5pq0scroq,
+    domainName=q7vop3bzlljjxu7hl6p53uw5pq0scroq.lambda-url.us-east-2.on.aws,
+    domainPrefix=q7vop3bzlljjxu7hl6p53uw5pq0scroq,
+    http=
+  {
+    method=POST,
+    path=/,
+    protocol=HTTP/1.1,
+    sourceIp=24.17.173.226,
+    userAgent=Java-http-client/23.0.1
   },
-  "responseElements": null,
-  "additionalEventData": {
-    "functionVersion": "arn:aws:lambda:us-east-2:980921732919:function:worker8:$LATEST"
-  },
-  "requestID": "869ec193-7f9f-4759-8f0e-b73fdcb4dd7f",
-  "eventID": "06839fad-bb07-4ec0-89ef-fb4968de5b0a",
-  "readOnly": false,
-  "resources": [
-    {
-      "accountId": "980921732919",
-      "type": "AWS::Lambda::Function",
-      "ARN": "arn:aws:lambda:us-east-2:980921732919:function:worker8"
-    }
-  ],
-  "eventType": "AwsApiCall",
-  "managementEvent": false,
-  "recipientAccountId": "980921732919",
-  "sharedEventID": "f8a1a55a-f250-4424-9ef6-996130fd6525",
-  "eventCategory": "Data",
-  "tlsDetails": {
-    "tlsVersion": "TLSv1.3",
-    "cipherSuite": "TLS_AES_128_GCM_SHA256",
-    "clientProvidedHostHeader": "hnmiaxbd7u75aamgtq5cb36jsi0rerew.lambda-url.us-east-2.on.aws"
-  }
-}
+  requestId=76cf2f42-7506-43ea-b594-669efdc8d492,
+  routeKey=$default,
+  stage=$default,
+  time=13/Jan/2025
+  :
+  03
+  :
+  41
+  :
+  37
+  +
+  0000,
+  timeEpoch=1736739697142},
+  body={\"name\":\"Quebec\"}, version=2.0, rawQueryString=}"
+]
