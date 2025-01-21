@@ -1,0 +1,14 @@
+{
+  "nodes": [
+    {
+      "id": "traceLambda",
+      "ip": "https://zbfu3sqinzuhcpu7d5wdsiwyce0qghzh.lambda-url.us-east-2.on.aws/",
+      "platform": "AWS",
+      "nodeType": "worker",
+      "tcpPort": "8080",
+      "sshPort": "22",
+      "numCores": 4,
+      "weight": 1
+    }
+  ]
+}
