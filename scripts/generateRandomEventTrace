@@ -1,13 +1,107 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# Brief description of your script
-# Copyright 2025 austin
+# Script to generate JSON objects with payloads as an array of objects for event traces.
+#
+# This script generates event traces, simulating events from workers with randomized timing,
+# payloads, and worker IDs, then formats them as JSON objects.
+#
+# Copyright 2025 Austin
+# Licensed under the MIT License.
 
-# Globals:
-# Arguments:
-#  None
-function main() {
-    :
+# Constants
+declare -r PAYLOADS=(
+  "Austin"
+  "Bravo"
+  "Charlie"
+  "Delta"
+  "Echo"
+  "Foxtrot"
+  "Golf"
+  "Hotel"
+  "India"
+  "Juliet"
+  "Kilo"
+  "Lloyd"
+  "Mike"
+  "November"
+  "Oscar"
+  "Papa"
+  "Quebec"
+  "Romeo"
+  "Seira"
+  "Tomoki"
+  "Uniform"
+  "Victor"
+  "Wiskey"
+  "XRay"
+  "Yanky"
+  "Zulu"
+)
+
+# Functions
+
+## generateEvenJsonObject
+#
+# Generates a JSON object for a single event.
+#
+# Args:
+#   $1 (int): Event ID.
+#   $2 (string): Time from the start of the trace (ms).
+#   $3 (string): Node ID (e.g., Worker1, Worker2).
+#   $4 (string): Payload string.
+#   $5 (string): Endpoint identifier.
+#
+# Outputs:
+#   JSON object with event details.
+function generateEvenJsonObject() {
+  jq -n --argjson eventID "$1" \
+    --arg timeFromStart "$2" \
+    --arg nodeID "$3" \
+    --argjson payload "$(echo "$4" | jq -R '{"name": .}')" \
+    --arg endpoint "$5" \
+    '$ARGS.named'
 }
 
+## generateRandomEventTrace
+#
+# Generates a series of JSON event objects with randomized data.
+#
+# Args:
+#   $1 (int): Maximum duration for the event trace (ms).
+#   $2 (int): Number of events to generate.
+#   $3 (int): Number of worker nodes.
+#
+# Outputs:
+#   Stream of JSON event objects, one per line.
+function generateRandomEventTrace() {
+  local i
+  for ((i = 0; i < $2; i++)); do
+    local eventId=$((i + 1))
+    local timeFromStart=$(((RANDOM % ${1}) + 1001))
+    local payload="${PAYLOADS[($i % ${#PAYLOADS[@]})]}"
+    local nodeId
+    nodeId=$(printf 'Worker%s' "$(((RANDOM % ${3}) + 1))")
+    generateEvenJsonObject $eventId $timeFromStart "$nodeId" "$payload" "Endpoint1"
+  done
+}
+
+## main
+#
+# Main entry point for the script. Generates random event traces based on input parameters.
+#
+# Args:
+#   $1 (int, optional): Maximum duration for the event trace (default: 1000 ms).
+#   $2 (int, optional): Number of events to generate (default: 100).
+#   $3 (int, optional): Number of worker nodes (default: 3).
+#
+# Outputs:
+#   JSON array of event objects.
+function main() {
+  local DURATION=${1-1000}
+  local NUM_EVENTS=${2-1000}
+  local NUM_WORKERS=${3-3}
+  generateRandomEventTrace "$DURATION" "$NUM_EVENTS" "$NUM_WORKERS" | jq -s
+}
+
+# Entry point
 main "$@"

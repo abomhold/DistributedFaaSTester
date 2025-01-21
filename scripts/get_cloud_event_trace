@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+#
+# Script to fetch and process AWS CloudWatch Logs for a specific log group and time range.
+#
+# This script retrieves log streams from an AWS CloudWatch log group, aggregates the logs,
+# and formats them into a JSON object. The output includes extracted client IP addresses,
+# payloads, and timing information from the logs.
+#
+# Dependencies:
+# - AWS CLI: Ensure it's installed and configured with appropriate permissions.
+# - jq: A lightweight and flexible command-line JSON processor.
+#
+# Usage:
+# ./script_name.sh [log_group_name] [start_time] [end_time]
+# - log_group_name: Name of the CloudWatch log group (default: /trace).
+# - start_time: Start time in milliseconds since epoch (default: 0).
+# - end_time: End time in milliseconds since epoch (default: current time).
+#
+# Copyright 2025
+# Licensed under the MIT License.
+
+# Function: get_log_streams
+# Fetches the log stream names for a given CloudWatch log group.
+#
+# Args:
+#   $1 (string): The name of the CloudWatch log group.
+#
+# Outputs:
+#   List of log stream names (one per line).
+function get_log_streams() {
+  aws logs describe-log-streams \
+    --log-group-name "$1" |
+    jq -r '.logStreams[].logStreamName'
+}
+
+# Function: log_event_loop
+# Retrieves log events for a set of log streams and outputs the log messages.
+#
+# Args:
+#   $1 (string): CloudWatch log group name.
+#   $2 (int): Start time in milliseconds since epoch.
+#   $3 (int): End time in milliseconds since epoch.
+#   $4+ (string): List of log stream names.
+#
+# Outputs:
+#   Log messages from all specified log streams.
+function log_event_loop() {
+  local log_group=$1
+  local start_time=$2
+  local end_time=$3
+  shift 3
+  for log_stream in "$@"; do
+    aws logs get-log-events \
+      --log-group-name "$log_group" \
+      --log-stream-name "$log_stream" \
+      --start-time "$start_time" \
+      --end-time "$end_time" |
+      jq -r '.events[].message' &
+  done
+}
+
+# Function: aggregate_logs
+# Aggregates logs into a JSON structure grouped by request ID.
+#
+# Args:
+#   $1 (string): CloudWatch log group name.
+#   $2 (int): Start time in milliseconds since epoch.
+#   $3 (int): End time in milliseconds since epoch.
+#   $4+ (string): List of log stream names.
+#
+# Outputs:
+#   JSON object with grouped logs, including client IP and payload information.
+function aggregate_logs() {
+  local log_group=$1
+  local start_time=$2
+  local end_time=$3
+  shift 3
+  local logs_json
+  logs_json=$(log_event_loop "$log_group" "$start_time" "$end_time" "$@" | jq -s .)
+  echo "$logs_json" | jq -r --argjson start_time "$start_time" '
+    map(select(.type == "platform.start" or (.message and (.message | type == "string")))) |
+    group_by(.record.requestId // .AWSRequestId) |
+    map(
+      {
+        eventID: (.[0].record.requestId // .[0].AWSRequestId),
+        timeFromStart: (
+          map(select(.type == "platform.start")) |
+          .[0].time |
+          capture("(?<date>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})\\.(?<millis>\\d{3})Z") |
+          (.date | strptime("%Y-%m-%dT%H:%M:%S") | mktime * 1000) + (.millis | tonumber) - $start_time
+        ),
+        nodeID: (map(select(.message)) | .[0].message | try fromjson | .clientIp // null),
+        payload: (map(select(.message)) | .[0].message | try fromjson | .payload // null),
+        endpoint: "Endpoint1"
+      }
+    )
+  '
+}
+
+# Main function: main
+# Entry point for the script. Fetches log streams, aggregates logs, and outputs them as JSON.
+#
+# Args:
+#   $1 (string, optional): CloudWatch log group name (default: /trace).
+#   $2 (int, optional): Start time in milliseconds since epoch (default: 0).
+#   $3 (int, optional): End time in milliseconds since epoch (default: current time).
+#
+# Outputs:
+#   JSON object containing aggregated log data.
+function main() {
+  local log_group="${1-/trace}"
+  local start_time="${2:-$((0))}"
+  local end_time="${3:-$(($(date +%s) * 1000))}"
+  local log_streams
+  mapfile -t log_streams < <(get_log_streams "$log_group")
+  aggregate_logs "$log_group" "$start_time" "$end_time" "${log_streams[@]}" | jq
+}
+
+# Entry point for the script
+main "$@"
